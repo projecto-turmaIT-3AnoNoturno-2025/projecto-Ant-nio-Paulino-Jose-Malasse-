@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acadêmica - Materiais Acadêmicos Online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom CSS for animations and additional styling */
+        .book-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(23, 140, 175, 0.1);
+        }
+        
+        .chat-message {
+            opacity: 0;
+            animation: fadeIn 0.3s ease-in forwards;
+        }
+        
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        
+        #chat-container {
+            transition: all 0.3s ease;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            animation: modalFadeIn 0.3s;
+        }
+        
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: rgb(219, 18, 79);
+        }
+        
+        /* Login/Signup tabs */
+        .tab {
+            display: none;
+        }
+        
+        .tab.active {
+            display: block;
+        }
+        
+        .tab-button {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #6b7280;
+        }
+        
+        .tab-button.active {
+            color: #4f46e5;
+            border-bottom: 2px solid #4f46e5;
+        }
+        
+        /* Chat widget */
+        #chat-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            max-height: 500px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            display: none;
+            flex-direction: column;
+            z-index: 90;
+        }
+        
+        #chat-header {
+            background: #4f46e5;
+            color: white;
+            padding: 15px;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        #chat-messages {
+            flex-grow: 1;
+            padding: 15px;
+            overflow-y: auto;
+            max-height: 350px;
+        }
+        
+        #chat-input-container {
+            padding: 10px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+        }
+        
+        #chat-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 20px;
+            outline: none;
+        }
+        
+        #chat-send {
+            margin-left: 10px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 0 15px;
+            cursor: pointer;
+        }
+        
+        /* Notification */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: #4f46e5;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navbar -->
+    <nav class="bg-indigo-700 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-graduation-cap text-2xl"></i>
+                    <a href="#" class="text-xl font-bold">Malasse Academy</a>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="#" class="hover:text-indigo-200">Início</a>
+                    <a href="#materiais" class="hover:text-indigo-200">Materiais</a>
+                    <a href="#sobre" class="hover:text-indigo-200">Sobre</a>
+                    <a href="#contato" class="hover:text-indigo-200">Contato</a>
+                     <a href="aluno.html" class="hover:text-indigo-200">aluno</a>
+                      <a href="chat.html" class="hover:text-indigo-200">Chat</a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <button id="chat-toggle" class="relative p-2 rounded-full hover:bg-indigo-600">
+                        <i class="fas fa-comments"></i>
+                        <span id="unread-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+                    </button>
+                    <a href="#" class="p-2 rounded-full hover:bg-indigo-600">
+                        <i class="fas fa-shopping-cart"></i>
+                    </a>
+                    <button id="auth-button" class="bg-white text-indigo-700 px-4 py-1 rounded-full hover:bg-gray-100">
+                        <i class="fas fa-user mr-1"></i> Login
+                    </button>
+                    <button class="md:hidden p-2 rounded-full hover:bg-indigo-600" id="mobile-menu-button">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+                    
+            <!-- Mobile menu -->
+            <div class="md:hidden hidden mt-2 pb-2" id="mobile-menu">
+                <a href="#" class="block py-2 px-4 hover:bg-indigo-600 rounded">Início</a>
+                <a href="#materiais" class="block py-2 px-4 hover:bg-indigo-600 rounded">Materiais</a>
+                <a href="#sobre" class="block py-2 px-4 hover:bg-indigo-600 rounded">Sobre</a>
+                <a href="#contato" class="block py-2 px-4 hover:bg-indigo-600 rounded">Contato</a>
+                <a href="#" class="block py-2 px-4 hover:bg-indigo-600 rounded" id="mobile-auth-button">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Login/Signup Modal -->
+    <div id="auth-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="flex border-b mb-4">
+                <button class="tab-button active" data-tab="login">Login</button>
+                <button class="tab-button" data-tab="signup">Cadastro</button>
+            </div>
+            
+            <!-- Login Tab -->
+            <div id="login" class="tab active">
+                <h2 class="text-2xl font-bold mb-4 text-gray-800">Acesse sua conta</h2>
+                <form id="login-form" class="space-y-4">
+                    <div>
+                        <label for="login-email" class="block text-gray-700 font-medium mb-1">Email</label>
+                        <input type="email" id="login-email" name="email" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label for="login-password" class="block text-gray-700 font-medium mb-1">Senha</label>
+                        <input type="password" id="login-password" name="password" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="remember-me" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                            <label for="remember-me" class="ml-2 block text-sm text-gray-700">Lembrar-me</label>
+                        </div>
+                        <a href="#" class="text-sm text-indigo-600 hover:text-indigo-500">Esqueceu a senha?</a>
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition duration-300">
+                        Entrar
+                    </button>
+                </form>
+                <div class="mt-4 text-center">
+                    <p class="text-gray-600">Não tem uma conta? <a href="#" class="text-indigo-600 font-medium switch-tab" data-tab="signup">Cadastre-se</a></p>
+                </div>
+            </div>
+            
+            <!-- Signup Tab -->
+            <div id="signup" class="tab">
+                <h2 class="text-2xl font-bold mb-4 text-gray-800">Crie sua conta</h2>
+                <form id="signup-form" class="space-y-4">
+                    <div>
+                        <label for="signup-name" class="block text-gray-700 font-medium mb-1">Nome completo</label>
+                        <input type="text" id="signup-name" name="name" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label for="signup-email" class="block text-gray-700 font-medium mb-1">Email</label>
+                        <input type="email" id="signup-email" name="email" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label for="signup-password" class="block text-gray-700 font-medium mb-1">Senha</label>
+                        <input type="password" id="signup-password" name="password" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label for="signup-confirm-password" class="block text-gray-700 font-medium mb-1">Confirme a senha</label>
+                        <input type="password" id="signup-confirm-password" name="confirm_password" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="terms" name="terms" required class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                        <label for="terms" class="ml-2 block text-sm text-gray-700">Eu concordo com os <a href="#" class="text-indigo-600">Termos de Serviço</a> e <a href="#" class="text-indigo-600">Política de Privacidade</a></label>
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition duration-300">
+                        Cadastrar
+                    </button>
+                </form>
+                <div class="mt-4 text-center">
+                    <p class="text-gray-600">Já tem uma conta? <a href="#" class="text-indigo-600 font-medium switch-tab" data-tab="login">Faça login</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-16">
+        <div class="container mx-auto px-4 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">Encontre aqui Materiais Acadêmicos de Alta Qualidade</h1>
+            <p class="text-xl mb-8 max-w-2xl mx-auto">Encontre os melhores resumos, trabalhos e materiais de estudo para impulsionar seu aprendizado.</p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <a href="#materiais" class="bg-white text-indigo-700 font-bold py-3 px-6 rounded-lg hover:bg-gray-100 transition duration-300">Explorar Materiais</a>
+                <a href="#sobre" class="bg-transparent border-2 border-white text-white font-bold py-3 px-6 rounded-lg hover:bg-white hover:text-indigo-700 transition duration-300">Saiba Mais</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Categories -->
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Categorias em Destaque</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="bg-indigo-50 rounded-lg p-6 text-center hover:shadow-md transition duration-300">
+                    <i class="fas fa-flask text-4xl text-indigo-600 mb-4"></i>
+                    <h3 class="font-bold text-lg mb-2 text-gray-800">Ciências</h3>
+                    <p class="text-gray-600">Biologia, Química, Física</p>
+                </div>
+                <div class="bg-purple-50 rounded-lg p-6 text-center hover:shadow-md transition duration-300">
+                    <i class="fas fa-calculator text-4xl text-purple-600 mb-4"></i>
+                    <h3 class="font-bold text-lg mb-2 text-gray-800">Matemática</h3>
+                    <p class="text-gray-600">Álgebra, Cálculo, Estatística</p>
+                </div>
+                <div class="bg-blue-50 rounded-lg p-6 text-center hover:shadow-md transition duration-300">
+                    <i class="fas fa-book text-4xl text-blue-600 mb-4"></i>
+                    <h3 class="font-bold text-lg mb-2 text-gray-800">Literatura</h3>
+                    <p class="text-gray-600">Análises, Resumos, Críticas</p>
+                </div>
+                <div class="bg-green-50 rounded-lg p-6 text-center hover:shadow-md transition duration-300">
+                    <i class="fas fa-code text-4xl text-green-600 mb-4"></i>
+                    <h3 class="font-bold text-lg mb-2 text-gray-800">Tecnologia</h3>
+                    <p class="text-gray-600">Programação, IA, Dados</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Materials Section -->
+    <section id="materiais" class="py-12 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-800">Materiais Recentes</h2>
+                <div class="relative">
+                    <select id="category-filter" class="appearance-none bg-white border border-gray-300 rounded-lg py-2 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="all">Todas Categorias</option>
+                        <option value="ciencias">Ciências</option>
+                        <option value="matematica">Matemática</option>
+                        <option value="literatura">Literatura</option>
+                        <option value="tecnologia">Tecnologia</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </div>
+                    
+            <div id="materials-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Materials will be loaded here via AJAX -->
+            </div>
+                    
+            <div class="text-center mt-8">
+                <button id="load-more" class="bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition duration-300">
+                    Carregar Mais
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="sobre" class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col lg:flex-row items-center">
+                <div class="lg:w-1/2 mb-8 lg:mb-0 lg:pr-12">
+                    <h2 class="text-3xl font-bold mb-6 text-gray-800">Sobre a Malasse Academy</h2>
+                    <p class="text-gray-600 mb-4">
+                        A Acadêmica nasceu da necessidade de conectar estudantes que produzem materiais de qualidade com aqueles que precisam de recursos para seus estudos.
+                    </p>
+                    <p class="text-gray-600 mb-4">
+                        Nossa plataforma oferece um espaço seguro e organizado para compra e venda de materiais acadêmicos, garantindo qualidade e confiabilidade em todas as transações.
+                    </p>
+                    <p class="text-gray-600 mb-6">
+                        Todos os materiais passam por uma curadoria de nossa equipe antes de serem disponibilizados, assegurando conteúdo relevante e de alto valor acadêmico.
+                    </p>
+                    <div class="flex flex-wrap gap-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                            <span class="text-gray-700">Materiais verificados</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-lock text-indigo-500 mr-2"></i>
+                            <span class="text-gray-700">Pagamento seguro</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-headset text-blue-500 mr-2"></i>
+                            <span class="text-gray-700">Suporte 24/7</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:w-1/2">
+                    <div class="bg-gray-100 rounded-xl p-2 shadow-lg">
+                        <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80"
+                              alt="Estudantes na biblioteca"
+                              class="rounded-lg w-full h-auto">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Form -->
+    <section id="contato" class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Entre em Contato</h2>
+                    
+            <div class="max-w-2xl mx-auto bg-gray-50 rounded-xl shadow-md overflow-hidden">
+                <div class="md:flex">
+                    <div class="md:w-1/2 bg-indigo-600 text-white p-8">
+                        <h3 class="text-xl font-bold mb-4">Informações de Contato</h3>
+                        <div class="mb-6">
+                            <div class="flex items-start mb-4">
+                                <i class="fas fa-map-marker-alt mt-1 mr-4"></i>
+                                <div>
+                                    <h4 class="font-bold">Endereço</h4>
+                                    <p>Av. 24 de Julho, 255<br>, Cidade de Pemba</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start mb-4">
+                                <i class="fas fa-phone-alt mt-1 mr-4"></i>
+                                <div>
+                                    <h4 class="font-bold">Telefone</h4>
+                                    <p>(258) 843782801</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-envelope mt-1 mr-4"></i>
+                                <div>
+                                    <h4 class="font-bold">Email</h4>
+                                    <p>malasse.academy@.co.mz</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex space-x-4">
+                            <a href="#" class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center hover:bg-indigo-400 transition duration-300">
+                                <i class="fab fa-facebook-f"></i>
+                            </a>
+                            <a href="#" class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center hover:bg-indigo-400 transition duration-300">
+                                <i class="fab fa-twitter"></i>
+                            </a>
+                            <a href="#" class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center hover:bg-indigo-400 transition duration-300">
+                                <i class="fab fa-instagram"></i>
+                            </a>
+                            <a href="#" class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center hover:bg-indigo-400 transition duration-300">
+                                <i class="fab fa-linkedin-in"></i>
+                            </a>
+                        </div>
+                    </div>
+                                        
+                    <div class="md:w-1/2 p-8">
+                        <form id="contact-form" class="space-y-4">
+                            <div>
+                                <label for="name" class="block text-gray-700 font-medium mb-1">Nome</label>
+                                <input type="text" id="name" name="name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label for="email" class="block text-gray-700 font-medium mb-1">Email</label>
+                                <input type="email" id="email" name="email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label for="subject" class="block text-gray-700 font-medium mb-1">Assunto</label>
+                                <input type="text" id="subject" name="subject" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label for="message" class="block text-gray-700 font-medium mb-1">Mensagem</label>
+                                <textarea id="message" name="message" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                            </div>
+                            <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition duration-300 flex items-center justify-center">
+                                <span id="submit-text">Enviar Mensagem</span>
+                                <span id="submit-spinner" class="loading-spinner ml-2 hidden"></span>
+                            </button>
+                        </form>
+                        <div id="form-response" class="mt-4 hidden"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Chat Widget -->
+    <div id="chat-widget">
+        <div id="chat-header">
+            <h3>Chat de Suporte</h3>
+            <button id="chat-close" class="text-white">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="chat-messages">
+            <div class="text-center text-gray-500 py-4">
+                Bem-vindo ao chat de suporte! Como podemos ajudar?
+            </div>
+            <!-- Messages will be added here -->
+        </div>
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Digite sua mensagem...">
+            <button id="chat-send"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle mr-2"></i>
+            <span id="notification-message">Mensagem enviada com sucesso!</span>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Acadêmica</h3>
+                    <p class="text-gray-400">
+                        A plataforma líder em materiais acadêmicos de qualidade para estudantes e professores.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Links Úteis</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white">Início</a></li>
+                        <li><a href="#materiais" class="text-gray-400 hover:text-white">Materiais</a></li>
+                        <li><a href="#sobre" class="text-gray-400 hover:text-white">Sobre</a></li>
+                        <li><a href="#contato" class="text-gray-400 hover:text-white">Contato</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Categorias</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white">Ciências</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Matemática</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Literatura</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Tecnologia</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Noticias</h4>
+                    <p class="text-gray-400 mb-2">Assine para receber novidades e promoções.</p>
+                    <form class="flex">
+                        <input type="email" placeholder="Seu email" class="px-4 py-2 rounded-l-lg text-gray-800 w-full">
+                        <button type="submit" class="bg-indigo-600 px-4 py-2 rounded-r-lg">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2023 Malasse Academy. Todos os direitos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        });
+
+        // Modal functionality
+        const modal = document.getElementById('auth-modal');
+        const authButton = document.getElementById('auth-button');
+        const mobileAuthButton = document.getElementById('mobile-auth-button');
+        const closeButton = document.querySelector('.close');
+        
+        function openModal() {
+            modal.style.display = 'block';
+        }
+        
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+        
+        authButton.addEventListener('click', openModal);
+        mobileAuthButton.addEventListener('click', openModal);
+        closeButton.addEventListener('click', closeModal);
+        
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Tab switching
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabs = document.querySelectorAll('.tab');
+        const switchTabs = document.querySelectorAll('.switch-tab');
+        
+        tabButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+                
+                // Remove active class from all buttons and tabs
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabs.forEach(tab => tab.classList.remove('active'));
+                
+                // Add active class to clicked button and corresponding tab
+                this.classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+        
+        switchTabs.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const tabId = this.getAttribute('data-tab');
+                
+                // Remove active class from all buttons and tabs
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabs.forEach(tab => tab.classList.remove('active'));
+                
+                // Add active class to target button and tab
+                document.querySelector(`.tab-button[data-tab="${tabId}"]`).classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // Form submission with AJAX
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            
+            // Simulate loading
+            submitButton.innerHTML = '<span class="loading-spinner"></span> Processando...';
+            
+            // Simulate AJAX request
+            setTimeout(() => {
+                // Show success notification
+                showNotification('Login realizado com sucesso!');
+                
+                // Update UI for logged in user
+                document.getElementById('auth-button').innerHTML = '<i class="fas fa-user mr-1"></i> Minha Conta';
+                
+                // Close modal
+                closeModal();
+                
+                // Reset form
+                this.reset();
+                submitButton.textContent = originalText;
+            }, 1500);
+        });
+        
+        document.getElementById('signup-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            
+            // Simulate loading
+            submitButton.innerHTML = '<span class="loading-spinner"></span> Processando...';
+            
+            // Simulate AJAX request
+            setTimeout(() => {
+                // Show success notification
+                showNotification('Cadastro realizado com sucesso! Faça login para continuar.');
+                
+                // Switch to login tab
+                document.querySelector('.tab-button[data-tab="login"]').click();
+                
+                // Reset form
+                this.reset();
+                submitButton.textContent = originalText;
+            }, 1500);
+        });
+        
+        document.getElementById('contact-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const submitText = document.getElementById('submit-text');
+            const submitSpinner = document.getElementById('submit-spinner');
+            const formResponse = document.getElementById('form-response');
+            
+            // Show loading state
+            submitText.textContent = 'Enviando...';
+            submitSpinner.classList.remove('hidden');
+            
+            // Simulate AJAX request
+            setTimeout(() => {
+                // Show success message
+                formResponse.innerHTML = `
+                    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        <strong>Sucesso!</strong> Sua mensagem foi enviada. Entraremos em contato em breve.
+                    </div>
+                `;
+                formResponse.classList.remove('hidden');
+                
+                // Reset form and button
+                this.reset();
+                submitText.textContent = 'Enviar Mensagem';
+                submitSpinner.classList.add('hidden');
+                
+                // Hide response after 5 seconds
+                setTimeout(() => {
+                    formResponse.classList.add('hidden');
+                }, 5000);
+            }, 1500);
+        });
+
+        // Notification function
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            const notificationMessage = document.getElementById('notification-message');
+            
+            notificationMessage.textContent = message;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        // Chat functionality
+        const chatToggle = document.getElementById('chat-toggle');
+        const chatWidget = document.getElementById('chat-widget');
+        const chatClose = document.getElementById('chat-close');
+        const chatInput = document.getElementById('chat-input');
+        const chatSend = document.getElementById('chat-send');
+        const chatMessages = document.getElementById('chat-messages');
+        const unreadCount = document.getElementById('unread-count');
+        
+        let unreadMessages = 0;
+        let isChatOpen = false;
+        
+        // Simulate WebSocket connection
+        function simulateWebSocket() {
+            // Simulate incoming messages
+            const botMessages = [
+                "Olá! Como posso te ajudar hoje?",
+                "Estamos aqui para responder suas dúvidas sobre nossos materiais acadêmicos.",
+                "Você pode pesquisar por categoria ou usar a barra de busca para encontrar materiais específicos.",
+                "Todos os nossos materiais passam por verificação de qualidade antes de serem publicados.",
+                "Precisa de ajuda com algo mais?"
+            ];
+            
+            let messageIndex = 0;
+            
+            setInterval(() => {
+                if (!isChatOpen && messageIndex < botMessages.length) {
+                    unreadMessages++;
+                    unreadCount.textContent = unreadMessages;
+                    unreadCount.classList.remove('hidden');
+                    
+                    // Add message to chat (even if not visible)
+                    addMessage('Suporte Acadêmica', botMessages[messageIndex], 'received');
+                    messageIndex++;
+                }
+            }, 10000);
+        }
+        
+        // Initialize chat
+        simulateWebSocket();
+        
+        // Toggle chat visibility
+        chatToggle.addEventListener('click', function() {
+            isChatOpen = !isChatOpen;
+            
+            if (isChatOpen) {
+                chatWidget.style.display = 'flex';
+                unreadMessages = 0;
+                unreadCount.classList.add('hidden');
+            }
+        });
+        
+        // Close chat
+        chatClose.addEventListener('click', function() {
+            chatWidget.style.display = 'none';
+            isChatOpen = false;
+        });
+        
+        // Send message
+        function addMessage(sender, message, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('chat-message', 'mb-3');
+            
+            if (type === 'sent') {
+                messageDiv.innerHTML = `
+                    <div class="flex justify-end">
+                        <div class="bg-indigo-600 text-white rounded-l-lg rounded-tr-lg px-4 py-2 max-w-xs">
+                            ${message}
+                        </div>
+                    </div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="flex justify-start">
+                        <div class="bg-gray-200 text-gray-800 rounded-r-lg rounded-tl-lg px-4 py-2 max-w-xs">
+                            <div class="font-bold text-sm">${sender}</div>
+                            ${message}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        chatSend.addEventListener('click', function() {
+            const message = chatInput.value.trim();
+            if (message) {
+                addMessage('Você', message, 'sent');
+                chatInput.value = '';
+                
+                // Simulate bot response after a delay
+                setTimeout(() => {
+                    const responses = [
+                        "Entendi sua dúvida. Vou verificar e te respondo em breve.",
+                        "Ótima pergunta! Nossos materiais sobre esse tema estão na seção de Tecnologia.",
+                        "Agradecemos pelo seu contato! Algo mais que possamos ajudar?",
+                        "Estamos aqui para ajudar com qualquer dúvida sobre nossos materiais."
+                    ];
+                    
+                    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                    addMessage('Suporte Acadêmica', randomResponse, 'received');
+                }, 1000);
+            }
+        });
+        
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                chatSend.click();
+            }
+        });
+
+        // AJAX for loading materials
+        const materialsContainer = document.getElementById('materials-container');
+        const categoryFilter = document.getElementById('category-filter');
+        const loadMoreBtn = document.getElementById('load-more');
+        
+        let currentPage = 1;
+        let currentCategory = 'all';
+        
+        // Sample materials data
+        const materialsData = {
+            all: [
+                { id: 1, title: 'Resumo de Biologia Celular', category: 'ciencias', price: '3000 MZN', rating: 4, image: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80' },
+                { id: 2, title: 'Exercícios de Cálculo Resolvidos', category: 'matematica', price: '3000 MZN', rating: 5, image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80' },
+                { id: 3, title: 'Análise de Dom Casmurro', category: 'literatura', price: '3000 MZN', rating: 4, image: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80' },
+                { id: 4, title: 'Guia de Python para Iniciantes', category: 'tecnologia', price: '3000 MZN', rating: 5, image: 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80' },
+                { id: 5, title: 'Tabela Periódica Comentada', category: 'ciencias', price: '3000 MZN', rating: 3, image: 'https://images.unsplash.com/photo-1563213126-a4273a1a73d1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80' },
+                { id: 6, title: 'Fórmulas de Geometria Analítica', category: 'matematica', price: '3000 MZN', rating: 4, image: 'https://images.unsplash.com/photo-1596495577886-d920f1fb7238?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80' },
+                { id: 7, title: 'Resumo: Modernismo no Brasil', category: 'literatura', price: '3000 MZN', rating: 5, image: 'https://images.unsplash.com/photo-1506880018603-4d5d806b3e2a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80' },
+                { id: 8, title: 'Introdução à Inteligência Artificial', category: 'tecnologia', price: '3000 MZN', rating: 5, image: 'https://images.unsplash.com/photo-1677442135136-760c813a743a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80' }
+            ],
+            ciencias: [
+                { id: 1, title: 'Resumo de Biologia Celular', category: 'ciencias', price: '3000 MZN', rating: 4, image: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80' },
+                { id: 5, title: 'Tabela Periódica Comentada', category: 'ciencias', price: '3000 MZN', rating: 3, image: 'https://images.unsplash.com/photo-1563213126-a4273a1a73d1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80' }
+            ],
+            matematica: [
+                { id: 2, title: 'Exercícios de Cálculo Resolvidos', category: 'matematica', price: '3000 MZN', rating: 5, image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80' },
+                { id: 6, title: 'Fórmulas de Geometria Analítica', category: 'matematica', price: '3000 MZN', rating: 4, image: 'https://images.unsplash.com/photo-1596495577886-d920f1fb7238?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80' }
+            ],
+            literatura: [
+                { id: 3, title: 'Análise de Dom Casmurro', category: 'literatura', price: '3000 MZN', rating: 4, image: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80' },
+                { id: 7, title: 'Resumo: Modernismo no Brasil', category: 'literatura', price: '3000 MZN', rating: 5, image: 'https://images.unsplash.com/photo-1506880018603-4d5d806b3e2a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80' }
+            ],
+            tecnologia: [
+                { id: 4, title: 'Guia de Python para Iniciantes', category: 'tecnologia', price: '3000 MZN', rating: 5, image: 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80' },
+                { id: 8, title: 'Introdução à Inteligência Artificial', category: 'tecnologia', price: '3000 MZN', rating: 5, image: 'https://images.unsplash.com/photo-1677442135136-760c813a743a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80' }
+            ]
+        };
+        
+        // Load materials function
+        function loadMaterials(category, page = 1, reset = false) {
+            // Simulate AJAX loading
+            loadMoreBtn.innerHTML = '<span class="loading-spinner"></span> Carregando...';
+            
+            setTimeout(() => {
+                const materials = category === 'all' ? materialsData.all : materialsData[category];
+                
+                if (reset) {
+                    materialsContainer.innerHTML = '';
+                    currentPage = 1;
+                }
+                
+                // In a real app, we would paginate the results
+                materials.forEach(material => {
+                    const materialCard = document.createElement('div');
+                    materialCard.className = 'book-card bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition duration-300';
+                    
+                    // Generate star rating
+                    let stars = '';
+                    for (let i = 0; i < 5; i++) {
+                        if (i < material.rating) {
+                            stars += '<i class="fas fa-star text-yellow-400"></i>';
+                        } else {
+                            stars += '<i class="far fa-star text-yellow-400"></i>';
+                        }
+                    }
+                    
+                    materialCard.innerHTML = `
+                        <div class="relative">
+                            <img src="${material.image}" alt="${material.title}" class="w-full h-48 object-cover">
+                            <div class="absolute top-2 right-2 bg-indigo-600 text-white text-xs font-bold px-2 py-1 rounded">
+                                ${material.category === 'ciencias' ? 'Ciências' : 
+                                  material.category === 'matematica' ? 'Matemática' : 
+                                  material.category === 'literatura' ? 'Literatura' : 'Tecnologia'}
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-bold text-lg mb-2 text-gray-800">${material.title}</h3>
+                            <div class="flex items-center mb-2">
+                                ${stars}
+                                <span class="text-gray-600 text-sm ml-1">(${material.rating})</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-indigo-600">${material.price}</span>
+                                <button class="bg-indigo-600 text-white px-3 py-1 rounded-full text-sm hover:bg-indigo-700">
+                                    <i class="fas fa-cart-plus mr-1"></i> Comprar
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    materialsContainer.appendChild(materialCard);
+                });
+                
+                loadMoreBtn.textContent = 'Carregar Mais';
+                currentPage++;
+            }, 800);
+        }
+        
+        // Initial load
+        loadMaterials('all');
+        
+        // Category filter change
+        categoryFilter.addEventListener('change', function() {
+            currentCategory = this.value;
+            loadMaterials(currentCategory, 1, true);
+        });
+        
+        // Load more button
+        loadMoreBtn.addEventListener('click', function() {
+            loadMaterials(currentCategory, currentPage);
+        });
+    </script>
+</body>
+</html>

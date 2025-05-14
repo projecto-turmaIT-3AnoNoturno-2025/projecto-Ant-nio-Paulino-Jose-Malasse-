@@ -1,0 +1,17 @@
+{
+  "name": "academica",
+  "version": "1.0.0",
+  "description": "Projeto acadêmico com AJAX, WebSocket, Node.js e Bootstrap",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "openai": "^4.98.0",
+    "ws": "^8.18.2"
+  }
+}
